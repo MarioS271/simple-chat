@@ -8,6 +8,7 @@ use aes_gcm::aead::Aead;
 
 const ENCRYPTION_KEY_BYTES: usize = 32;
 const NONCE_BYTES: usize = 12;
+const TAG_BYTES: usize = 16;
 
 pub type EncryptionKey = [u8; ENCRYPTION_KEY_BYTES];
 
@@ -34,6 +35,14 @@ pub fn encrypt(key: &EncryptionKey, plaintext: &[u8]) -> Result<Vec<u8>, String>
 }
 
 pub fn decrypt(key: &EncryptionKey, data: &[u8]) -> Result<Vec<u8>, String> {
+    if data.len() < NONCE_BYTES + TAG_BYTES {
+        return Err(format!(
+            "Data too short (is {} bytes, but needs to be at minimum {} bytes)",
+            data.len(),
+            NONCE_BYTES + TAG_BYTES
+        ));
+    }
+
     let cipher = Aes256Gcm::new(key.into());
 
     let (nonce_bytes, ciphertext) = data.split_at(NONCE_BYTES);
