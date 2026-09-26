@@ -49,8 +49,8 @@ fn main() {
 
             Command::Client(cmd) => match cmd {
                 ClientCommand::Connect { name } => todo!("client connect"),
-                ClientCommand::Add { name, port } => todo!("client add"),
-                ClientCommand::Remove { name } => todo!("client remove"),
+                ClientCommand::Add { name, address } => client::cmd::add::handler(name, address),
+                ClientCommand::Remove { name } => client::cmd::remove::handler(name),
                 ClientCommand::Help => client::cmd::help::handler(),
                 ClientCommand::List => client::cmd::list::handler(),
             }

@@ -23,26 +23,26 @@ pub fn parse_server(mut args: impl Iterator<Item = String>) -> Result<ServerComm
             "--help" => return Ok(ServerCommand::Help),
             "--list" => return Ok(ServerCommand::List),
             "--new" => {
-                if mode != ServerMode::Default {
+                if mode == ServerMode::Default {
                     mode = ServerMode::New
                 } else {
                     return Err(format!("Cannot use --new with {}", mode.to_flag_str()));
                 }
-            },
+            }
             "--delete" => {
-                if mode != ServerMode::Default {
+                if mode == ServerMode::Default {
                     mode = ServerMode::Delete
                 } else {
                     return Err(format!("Cannot use --delete with {}", mode.to_flag_str()));
                 }
             }
             "--show-key" => {
-                if mode != ServerMode::Default {
+                if mode == ServerMode::Default {
                     mode = ServerMode::ShowKey
                 } else {
                     return Err(format!("Cannot use --show-key with {}", mode.to_flag_str()));
                 }
-            },
+            }
             "--port" => {
                 let value = args.next().ok_or("--port requires a value".to_string())?;
                 port = Some(value.parse::<u16>().map_err(|_| format!("Invalid Port: {}", value))?);
@@ -81,13 +81,13 @@ enum ServerMode {
     ShowKey
 }
 impl ServerMode {
-    pub fn to_flag_str(&self) -> String {
+    pub fn to_flag_str(&self) -> &str {
         use ServerMode::*;
         match self {
             New => "--new",
             Delete => "--delete",
             ShowKey => "--show-key",
-            _ => ""
-        }.to_string()
+            _ => "(if you can read this, the dev screwed up)"
+        }
     }
 }

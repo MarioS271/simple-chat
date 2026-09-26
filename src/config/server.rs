@@ -4,7 +4,6 @@
 //! Authors: MarioS271
 
 use serde::{Deserialize, Serialize};
-use crate::config::client::ClientConfig;
 
 const SERVER_CONFIG_FILE: &str = "servers.toml";
 

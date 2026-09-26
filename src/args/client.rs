@@ -5,19 +5,19 @@
 
 pub enum ClientCommand {
     Connect { name: String },
-    Add { name: String, port: Option<u16> },
+    Add { name: String, address: String },
     Remove { name: String },
     List,
     Help
 }
 
-pub fn parse_client(args: impl Iterator<Item = String>) -> Result<ClientCommand, String> {
+pub fn parse_client(mut args: impl Iterator<Item = String>) -> Result<ClientCommand, String> {
     let mut name: String = String::new();
-    let mut port: Option<u16> = None;
+    let mut address: String = String::new();
 
     let mut mode = ClientMode::Default;
 
-    for arg in args {
+    while let Some(arg) = args.next() {
         match arg.as_str() {
             "--help" => return Ok(ClientCommand::Help),
             "--list" => return Ok(ClientCommand::List),
@@ -27,14 +27,17 @@ pub fn parse_client(args: impl Iterator<Item = String>) -> Result<ClientCommand,
                 } else {
                     return Err(format!("Cannot use --add with {}", mode.to_flag_str()));
                 }
-            },
+            }
             "--remove" => {
                 if mode == ClientMode::Default {
                     mode = ClientMode::Remove;
                 } else {
                     return Err(format!("Cannot use --remove with {}", mode.to_flag_str()));
                 }
-            },
+            }
+            "--address" => {
+                address = args.next().ok_or("--address requires a value".to_string())?;
+            }
             other if other.starts_with("--") => return Err(format!("Unknown Option: {}", other)),
             other => name = other.to_string()
         }
@@ -49,7 +52,7 @@ pub fn parse_client(args: impl Iterator<Item = String>) -> Result<ClientCommand,
     }
 
     if mode == ClientMode::Add {
-        return Ok(ClientCommand::Add { name, port })
+        return Ok(ClientCommand::Add { name, address })
     }
     if mode == ClientMode::Remove {
         return Ok(ClientCommand::Remove { name })
@@ -65,12 +68,12 @@ enum ClientMode {
     Remove
 }
 impl ClientMode {
-    pub fn to_flag_str(&self) -> String {
+    pub fn to_flag_str(&self) -> &str {
         use ClientMode::*;
         match self {
             Add => "--add",
             Remove => "--remove",
-            _ => ""
-        }.to_string()
+            _ => "(if you can read this, the dev screwed up)"
+        }
     }
 }

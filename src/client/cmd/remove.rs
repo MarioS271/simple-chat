@@ -1,12 +1,12 @@
 // SPDX-License-Identifier: GPL-3.0-only
-//! `server --delete` Command Handler
+//! `client --remove` Command Handler
 //!
 //! Authors: MarioS271
 
 use crate::helpers::ask_for_confirmation;
 
 pub fn handler(name: String) -> Result<(), String> {
-    let mut config = crate::config::server::load()?;
+    let mut config = crate::config::client::load()?;
 
     if !config.servers.iter().any(|server| server.name == name) {
         return Err(format!("Server named '{}' doesn't exist", name));
@@ -22,7 +22,7 @@ pub fn handler(name: String) -> Result<(), String> {
     }
 
     config.servers.retain(|server| server.name != name);
-    crate::config::server::save(&config)?;
+    crate::config::client::save(&config)?;
 
     Ok(())
 }

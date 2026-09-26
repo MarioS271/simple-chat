@@ -3,5 +3,7 @@
 //!
 //! Authors: MarioS271
 
-pub(crate) mod help;
+pub(crate) mod add;
+pub(crate) mod remove;
 pub(crate) mod list;
+pub(crate) mod help;

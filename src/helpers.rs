@@ -29,8 +29,15 @@ pub fn ask_for_input(prompt: &str) -> std::io::Result<String> {
     Ok(result)
 }
 
-pub fn ask_for_confirmation(prompt: &str) -> std::io::Result<bool> {
-    print!("{} (y/n) ", prompt);
+pub fn ask_for_confirmation(prompt: &str, default_is_yes: bool) -> std::io::Result<bool> {
+    print!(
+        "{} {} ",
+        prompt,
+        match default_is_yes {
+            true => "(Y/n)",
+            false => "(y/N)"
+        }
+    );
     std::io::stdout().flush()?;
 
     let mut result = String::new();
