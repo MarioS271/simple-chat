@@ -69,16 +69,11 @@ pub fn init_tui(session_info: SessionInfo, mut stream: TcpStream) -> std::io::Re
                                 state.input.clear();
                                 msg
                             };
-                            if !input.is_empty() {
-                                let msg = Message::Chat(ChatMessage::new(&session_info, input));
-                                if let Err(err) = framing::write_message(
-                                    &mut stream,
-                                    msg.serialize().as_slice()
-                                ) {
-                                    end_raw_mode();
-                                    eprintln!("{} Write Error: {}", LOG_PREFIX, err);
-                                }
-                            }
+                            crate::client::net::send::send(
+                                &stream,
+                                "placeholder".to_string(),  // TODO: use name from ClientState
+                                input
+                            )?;
                         }
                         KeyCode::Esc => {
                             end_raw_mode();

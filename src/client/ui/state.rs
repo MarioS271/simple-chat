@@ -5,6 +5,11 @@
 
 use crate::message::Message;
 
+pub const MAX_NAME_LEN: usize = 32;
+
+pub type SenderNameArray = [u8; MAX_NAME_LEN];
+pub const EMPTY_SENDER_NAME_ARRAY: SenderNameArray = [0u8; MAX_NAME_LEN];
+
 pub struct ClientState {
     pub name: String,
     pub remote: String,

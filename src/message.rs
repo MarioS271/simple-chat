@@ -3,6 +3,7 @@
 //!
 //! Authors: MarioS271
 
+use crate::client::helpers::sender_name_string_to_bytes;
 use crate::client::session_info::SessionInfo;
 use crate::helpers::get_timestamp;
 use std::borrow::Cow;
@@ -78,10 +79,10 @@ pub struct ChatMessage {
 impl ChatMessage {
     const METADATA_SIZE: usize = 8 + SessionInfo::MAX_NAME_LEN;
 
-    pub fn new(session_info: &SessionInfo, content: String) -> Self {
+    pub fn new(sender_name: String, content: String) -> Self {
         Self {
             timestamp: get_timestamp(),
-            sender_name: session_info.name,
+            sender_name: sender_name_string_to_bytes(sender_name),
             content: content.into_bytes()
         }
     }

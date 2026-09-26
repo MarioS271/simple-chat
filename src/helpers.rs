@@ -28,3 +28,13 @@ pub fn ask_for_input(prompt: &str) -> std::io::Result<String> {
 
     Ok(result)
 }
+
+pub fn ask_for_confirmation(prompt: &str) -> std::io::Result<bool> {
+    print!("{} (y/n) ", prompt);
+    std::io::stdout().flush()?;
+
+    let mut result = String::new();
+    std::io::stdin().read_line(&mut result)?;
+
+    Ok(matches!(result.trim(), "y" | "Y"))
+}

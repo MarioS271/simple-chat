@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0-only
-//! Receiver Thread
+//! Message Receive Thread
 //!
 //! Authors: MarioS271
 
@@ -10,8 +10,6 @@ use crate::message::Message;
 use std::net::TcpStream;
 use std::sync::{Arc, Mutex};
 
-const LOG_PREFIX: &str = "(receive thread)";
-
 pub fn receive_thread(mut read_stream: TcpStream, state_recv: Arc<Mutex<ClientState>>) {
     loop {
         match framing::read_message(&mut read_stream) {
@@ -20,18 +18,19 @@ pub fn receive_thread(mut read_stream: TcpStream, state_recv: Arc<Mutex<ClientSt
                     Ok(msg) => state_recv.lock().unwrap().messages.push(msg),
                     Err(err) => {
                         end_raw_mode();
-                        eprintln!("{} Deserialize Error: {}", LOG_PREFIX, err);
+                        eprintln!("Deserialize Error: {}", err);
+                        std::process::exit(1);
                     }
                 }
             }
             Err(err) if err.kind() == std::io::ErrorKind::UnexpectedEof => {
                 end_raw_mode();
-                eprintln!("{} Disconnected", LOG_PREFIX);
+                eprintln!("Disconnected");
                 std::process::exit(1);
             }
             Err(err) => {
                 end_raw_mode();
-                eprintln!("{} Receive Error: {}", LOG_PREFIX, err);
+                eprintln!("Receive Error: {}", err);
                 std::process::exit(1);
             }
         }

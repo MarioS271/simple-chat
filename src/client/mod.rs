@@ -3,8 +3,8 @@
 //!
 //! Authors: MarioS271
 
+pub(crate) mod cmd;
 pub(crate) mod net;
 pub(crate) mod ui;
+pub(crate) mod helpers;
 pub(crate) mod session_info;
-
-pub(crate) use net::connect::connect;

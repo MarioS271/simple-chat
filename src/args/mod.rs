@@ -1,7 +1,8 @@
 // SPDX-License-Identifier: GPL-3.0-only
-//! Server-Side Logic
+//! Argument Parsing
 //!
 //! Authors: MarioS271
 
-pub(crate) mod cmd;
+pub(crate) mod common;
+pub(crate) mod client;
 pub(crate) mod server;
