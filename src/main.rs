@@ -16,6 +16,8 @@ mod message;
 pub const PROTOCOL_VERSION: u16 = 1;
 pub const DEFAULT_PORT: u16 = 42003;
 
+// TODO: finish encryption
+
 fn main() {
     use crate::args::common::Command;
     use crate::args::client::ClientCommand;
@@ -56,7 +58,7 @@ fn main() {
             }
 
             Command::Server(cmd) => match cmd {
-                ServerCommand::Start { name } => todo!("server start"),
+                ServerCommand::Start { name } => server::cmd::start::handler(name),
                 ServerCommand::New { name, port } => server::cmd::new::handler(name, port),
                 ServerCommand::Delete { name } => server::cmd::delete::handler(name),
                 ServerCommand::ShowKey { name } => server::cmd::show_key::handler(name),
