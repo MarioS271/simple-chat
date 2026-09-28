@@ -106,7 +106,7 @@ impl ChatMessage {
 
         let timestamp = u64::from_be_bytes(buffer[..8].try_into().unwrap());
         let sender_name = buffer[8..8 + MAX_NAME_LEN].try_into().unwrap();
-        let content = buffer[Self::METADATA_SIZE..Self::METADATA_SIZE].to_vec();
+        let content = buffer[Self::METADATA_SIZE..].to_vec();
 
         Ok(Self {
             timestamp,
