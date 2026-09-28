@@ -28,6 +28,12 @@ pub fn receive_thread(mut read_stream: TcpStream, state_recv: Arc<Mutex<ClientSt
                 eprintln!("Disconnected");
                 std::process::exit(1);
             }
+            Err(err) if err.kind() == std::io::ErrorKind::WouldBlock
+                || err.kind() == std::io::ErrorKind::TimedOut => {
+                end_raw_mode();
+                eprintln!("Receive Timed Out: {}", err);
+                std::process::exit(1);
+            }
             Err(err) => {
                 end_raw_mode();
                 eprintln!("Receive Error: {}", err);
