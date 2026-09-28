@@ -3,8 +3,7 @@
 //!
 //! Authors: MarioS271
 
-use crate::client::helpers::sender_name_string_to_bytes;
-use crate::client::session_info::SessionInfo;
+use crate::client::state::{MAX_NAME_LEN, SenderNameArray};
 use crate::helpers::get_timestamp;
 use std::borrow::Cow;
 
@@ -73,16 +72,16 @@ pub trait Formatted {
 
 pub struct ChatMessage {
     pub timestamp: u64,
-    pub sender_name: [u8; SessionInfo::MAX_NAME_LEN],
+    pub sender_name: SenderNameArray,
     pub content: Vec<u8>
 }
 impl ChatMessage {
-    const METADATA_SIZE: usize = 8 + SessionInfo::MAX_NAME_LEN;
+    const METADATA_SIZE: usize = 8 + MAX_NAME_LEN;
 
-    pub fn new(sender_name: String, content: String) -> Self {
+    pub fn new(sender_name: SenderNameArray, content: String) -> Self {
         Self {
             timestamp: get_timestamp(),
-            sender_name: sender_name_string_to_bytes(sender_name),
+            sender_name,
             content: content.into_bytes()
         }
     }
@@ -106,7 +105,7 @@ impl ChatMessage {
         }
 
         let timestamp = u64::from_be_bytes(buffer[..8].try_into().unwrap());
-        let sender_name = buffer[8..8 + SessionInfo::MAX_NAME_LEN].try_into().unwrap();
+        let sender_name = buffer[8..8 + MAX_NAME_LEN].try_into().unwrap();
         let content = buffer[Self::METADATA_SIZE..Self::METADATA_SIZE].to_vec();
 
         Ok(Self {

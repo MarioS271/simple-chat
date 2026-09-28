@@ -3,11 +3,10 @@
 //!
 //! Authors: MarioS271
 
+use crate::client::helpers::sender_name_string_to_bytes;
 use crate::client::net::receive::receive_thread;
-use crate::client::session_info::SessionInfo;
-use crate::client::ui::state::ClientState;
-use crate::framing;
-use crate::message::{ChatMessage, Formatted, Message};
+use crate::client::state::ClientState;
+use crate::message::{Formatted, Message};
 use ratatui::crossterm;
 use ratatui::crossterm::event::{Event, KeyCode};
 use ratatui::layout::Constraint;
@@ -17,9 +16,8 @@ use std::net::TcpStream;
 use std::sync::{Arc, Mutex};
 
 const MAX_MESSAGE_LEN: usize = 512;
-const LOG_PREFIX: &str = "(main thread)";
 
-pub fn init_tui(session_info: SessionInfo, mut stream: TcpStream) -> std::io::Result<()> {
+pub fn start_tui(state: Arc<Mutex<ClientState>>, stream: TcpStream) -> std::io::Result<()> {
     let _guard = TerminalGuard;
 
     crossterm::terminal::enable_raw_mode()?;
@@ -32,17 +30,12 @@ pub fn init_tui(session_info: SessionInfo, mut stream: TcpStream) -> std::io::Re
         ratatui::backend::CrosstermBackend::new(std::io::stdout())
     )?;
 
-    let state = Arc::new(Mutex::new(ClientState {
-        name: session_info.name_as_str().to_string(),
-        remote: stream.peer_addr()?.to_string(),
-        messages: Vec::new(),
-        input: String::new()
-    }));
-
     let read_stream = stream.try_clone()?;
     let state_recv = Arc::clone(&state);
 
     std::thread::spawn(move || receive_thread(read_stream, state_recv));
+
+    let sender_name_array = sender_name_string_to_bytes(&state.lock().unwrap().name);
 
     loop {
         terminal.draw(|frame| {
@@ -71,7 +64,7 @@ pub fn init_tui(session_info: SessionInfo, mut stream: TcpStream) -> std::io::Re
                             };
                             crate::client::net::send::send(
                                 &stream,
-                                "placeholder".to_string(),  // TODO: use name from ClientState
+                                sender_name_array,
                                 input
                             )?;
                         }
@@ -131,9 +124,15 @@ pub fn render_tui(frame: &mut ratatui::Frame, state: &ClientState) {
         areas[1]
     );
 
-    let available_width = (areas[2].width - 2) as usize;
-    let display_input = if state.input.len() > available_width {
-        &state.input[state.input.len() - available_width..]
+    let available_width = areas[2].width.saturating_sub(2) as usize;
+    let char_count = state.input.chars().count();
+    let display_input = if char_count > available_width {
+        let start = state.input
+            .char_indices()
+            .nth(char_count - available_width)
+            .map(|(byte_index, _)| byte_index)
+            .unwrap_or(0);
+        &state.input[start..]
     } else {
         &state.input
     };
@@ -144,7 +143,7 @@ pub fn render_tui(frame: &mut ratatui::Frame, state: &ClientState) {
         areas[2]
     );
 
-    let cursor_x = areas[2].x + 2 + display_input.len() as u16;
+    let cursor_x = areas[2].x + 2 + display_input.chars().count() as u16;
     let cursor_y = areas[2].y + 1;
     frame.set_cursor_position(ratatui::layout::Position { x: cursor_x, y: cursor_y });
 }

@@ -52,6 +52,9 @@ pub fn parse_client(mut args: impl Iterator<Item = String>) -> Result<ClientComm
     }
 
     if mode == ClientMode::Add {
+        if address.is_empty() {
+            return Err("No server address given".to_string());
+        }
         return Ok(ClientCommand::Add { name, address })
     }
     if mode == ClientMode::Remove {

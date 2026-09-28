@@ -4,14 +4,34 @@
 //! Authors: MarioS271
 
 use serde::{Deserialize, Serialize};
+use crate::helpers::ask_for_input;
 
 const CLIENT_CONFIG_FILE: &str = "clients.toml";
 
 #[derive(Serialize, Deserialize)]
 pub struct ClientConfig {
-    pub username: String,
+    username: String,
     #[serde(default)]
-    pub servers: Vec<ServerEntry>
+    servers: Vec<ServerEntry>
+}
+impl ClientConfig {
+    pub fn username(&mut self) -> Result<&String, String> {
+        if self.username.is_empty() {
+            let input = ask_for_input("Please enter your username")
+                .map_err(|e| format!("Failed to read in username: {}", e))?;
+            self.username = input;
+            save(&self)?;
+        }
+        Ok(&self.username)
+    }
+
+    pub fn servers(&self) -> &Vec<ServerEntry> {
+        &self.servers
+    }
+
+    pub fn servers_mut(&mut self) -> &mut Vec<ServerEntry> {
+        &mut self.servers
+    }
 }
 
 #[derive(Serialize, Deserialize)]

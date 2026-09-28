@@ -8,7 +8,7 @@ use crate::helpers::ask_for_confirmation;
 pub fn handler(name: String) -> Result<(), String> {
     let mut config = crate::config::server::load()?;
 
-    if !config.servers.iter().any(|server| server.name == name) {
+    if !config.servers().iter().any(|server| server.name == name) {
         return Err(format!("Server named '{}' doesn't exist", name));
     }
 
@@ -21,7 +21,7 @@ pub fn handler(name: String) -> Result<(), String> {
         return Err("Aborted.".to_string());
     }
 
-    config.servers.retain(|server| server.name != name);
+    config.servers_mut().retain(|server| server.name != name);
     crate::config::server::save(&config)?;
 
     Ok(())

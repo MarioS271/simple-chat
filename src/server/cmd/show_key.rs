@@ -8,7 +8,7 @@ use qrcode::render::unicode;
 
 pub fn handler(name: String) -> Result<(), String> {
     let config = crate::config::server::load()?;
-    let server = config.servers.iter()
+    let server = config.servers().iter()
         .find(|server| server.name == name)
         .ok_or(format!("Server '{}' not found", name))?;
 

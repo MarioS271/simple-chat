@@ -10,7 +10,7 @@ use base64::engine::general_purpose::STANDARD;
 pub fn handler(name: String, mut port: Option<u16>) -> Result<(), String> {
     let mut config = config::server::load()?;
 
-    if config.servers.iter().any(|server| server.name == name) {
+    if config.servers().iter().any(|server| server.name == name) {
         return Err(format!("Server named '{}' already exists", name));
     }
 
@@ -31,7 +31,7 @@ pub fn handler(name: String, mut port: Option<u16>) -> Result<(), String> {
         key: base64_key,
     };
 
-    config.servers.push(server);
+    config.servers_mut().push(server);
     config::server::save(&config)?;
 
     super::show_key::handler(name)

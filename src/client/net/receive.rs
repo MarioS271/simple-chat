@@ -3,8 +3,8 @@
 //!
 //! Authors: MarioS271
 
-use crate::client::ui::state::ClientState;
-use crate::client::ui::tui::end_raw_mode;
+use crate::client::state::ClientState;
+use crate::client::ui::end_raw_mode;
 use crate::framing;
 use crate::message::Message;
 use std::net::TcpStream;

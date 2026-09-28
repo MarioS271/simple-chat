@@ -10,7 +10,16 @@ const SERVER_CONFIG_FILE: &str = "servers.toml";
 #[derive(Serialize, Deserialize)]
 pub struct ServerConfig {
     #[serde(default)]
-    pub servers: Vec<ServerEntry>
+    servers: Vec<ServerEntry>
+}
+impl ServerConfig {
+    pub fn servers(&self) -> &Vec<ServerEntry> {
+        &self.servers
+    }
+
+    pub fn servers_mut(&mut self) -> &mut Vec<ServerEntry> {
+        &mut self.servers
+    }
 }
 
 #[derive(Serialize, Deserialize)]

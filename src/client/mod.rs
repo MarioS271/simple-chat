@@ -5,6 +5,9 @@
 
 pub(crate) mod cmd;
 pub(crate) mod net;
-pub(crate) mod ui;
 pub(crate) mod helpers;
-pub(crate) mod session_info;
+pub(crate) mod state;
+pub(crate) mod ui;
+
+use std::time::Duration;
+pub const READ_TIMEOUT: Duration = Duration::new(30, 0);

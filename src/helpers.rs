@@ -19,14 +19,16 @@ pub fn ask_for_input(prompt: &str) -> std::io::Result<String> {
     let stdin = std::io::stdin();
     let mut result = String::new();
 
-    if stdin.read_line(&mut result).is_err() || result.is_empty() {
+    stdin.read_line(&mut result)?;
+
+    if result.is_empty() {
         return Err(std::io::Error::new(
             std::io::ErrorKind::InvalidInput,
-            "Invalid Input"
+            "No input received"
         ));
     }
 
-    Ok(result)
+    Ok(result.trim().to_string())
 }
 
 pub fn ask_for_confirmation(prompt: &str, default_is_yes: bool) -> std::io::Result<bool> {

@@ -16,3 +16,14 @@ pub struct ClientState {
     pub messages: Vec<Message>,
     pub input: String
 }
+
+impl ClientState {
+    pub fn new(name: String, remote: String) -> Self {
+        Self {
+            name,
+            remote,
+            messages: Vec::new(),
+            input: String::new()
+        }
+    }
+}

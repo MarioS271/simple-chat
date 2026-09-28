@@ -3,6 +3,7 @@
 //!
 //! Authors: MarioS271
 
+pub(crate) mod connect;
 pub(crate) mod add;
 pub(crate) mod remove;
 pub(crate) mod list;

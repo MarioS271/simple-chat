@@ -6,14 +6,14 @@
 pub fn handler() -> Result<(), String> {
     let config = crate::config::client::load()?;
 
-    if !config.servers.is_empty() {
+    if !config.servers().is_empty() {
         println!("Known Servers:");
     } else {
         println!("No servers currently known");
         return Ok(());
     }
 
-    for server in config.servers {
+    for server in config.servers() {
         println!("  {} at {}", server.name, server.address);
     }
 

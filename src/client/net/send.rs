@@ -3,11 +3,12 @@
 //!
 //! Authors: MarioS271
 
+use crate::client::state::SenderNameArray;
 use crate::framing;
 use crate::message::{ChatMessage, Message};
 use std::net::TcpStream;
 
-pub fn send(mut stream: &TcpStream, sender_name: String, message: String) -> std::io::Result<()> {
+pub fn send(mut stream: &TcpStream, sender_name: SenderNameArray, message: String) -> std::io::Result<()> {
     if !message.is_empty() {
         let msg = Message::Chat(ChatMessage::new(sender_name, message));
         framing::write_message(

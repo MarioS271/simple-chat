@@ -9,18 +9,17 @@ use crate::helpers::ask_for_input;
 pub fn handler(name: String, mut address: String) -> Result<(), String> {
     let mut config = crate::config::client::load()?;
 
-    if config.servers.iter().any(|server| server.name == name) {
+    if config.servers().iter().any(|server| server.name == name) {
         return Err(format!("Server named '{}' already exists", name));
     }
 
     if !address.contains(':') {
-        println!("No port given, using default port {}", DEFAULT_PORT);
         address.push_str(
             format!(":{}", DEFAULT_PORT).as_str()
         );
-    } else {
-        println!("Using given port {}", address.rsplit_once(':').unwrap().1)
     }
+
+    println!("Adding server at address {}", address);
 
     let key = ask_for_input("Please enter the server's encryption key")
         .map_err(|e| format!("Failed to read input: {}", e))?;
@@ -35,7 +34,7 @@ pub fn handler(name: String, mut address: String) -> Result<(), String> {
         key
     };
 
-    config.servers.push(server);
+    config.servers_mut().push(server);
     crate::config::client::save(&config)?;
 
     Ok(())
