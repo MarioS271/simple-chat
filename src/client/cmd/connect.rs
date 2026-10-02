@@ -3,7 +3,7 @@
 //!
 //! Authors: MarioS271
 
-use crate::client::READ_TIMEOUT;
+use crate::TCP_TIMEOUT;
 use crate::client::helpers::sender_name_string_to_bytes;
 use crate::client::state::ClientState;
 use crate::client::ui::start_tui;
@@ -27,7 +27,7 @@ pub fn handler(name: String) -> Result<(), String> {
     let mut stream = TcpStream::connect(&client_state.remote)
         .map_err(|e| format!("Failed to open TCP stream: {}", e))?;
     stream.set_nodelay(true).map_err(|e| format!("Failed to set TCP stream into no delay mode: {}", e))?;
-    stream.set_read_timeout(Some(READ_TIMEOUT)).map_err(|e| format!("Failed to set TCP stream read timeout: {}", e))?;
+    stream.set_read_timeout(Some(TCP_TIMEOUT)).map_err(|e| format!("Failed to set TCP stream read timeout: {}", e))?;
 
     println!("Successfully connected to {}", client_state.remote);
 

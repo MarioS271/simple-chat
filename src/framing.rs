@@ -3,9 +3,8 @@
 //!
 //! Authors: MarioS271
 
+use crate::MAX_MESSAGE_SIZE;
 use std::io::{Read, Write};
-
-const MAX_MESSAGE_SIZE: usize = 65536;
 
 pub fn write_message(writer: &mut impl Write, data: &[u8]) -> std::io::Result<()> {
     if data.len() > MAX_MESSAGE_SIZE {

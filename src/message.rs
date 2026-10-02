@@ -7,6 +7,7 @@ use crate::client::state::{MAX_NAME_LEN, SenderNameArray};
 use crate::helpers::get_timestamp;
 use std::borrow::Cow;
 
+#[derive(Clone)]
 pub enum Message {
     Chat(ChatMessage),
     System(SystemMessage)
@@ -70,6 +71,7 @@ pub trait Formatted {
     }
 }
 
+#[derive(Clone)]
 pub struct ChatMessage {
     pub timestamp: u64,
     pub sender_name: SenderNameArray,
@@ -131,6 +133,7 @@ impl Formatted for ChatMessage {
     }
 }
 
+#[derive(Clone)]
 pub struct SystemMessage {
     pub timestamp: u64,
     pub content: Vec<u8>

@@ -3,6 +3,7 @@
 //!
 //! Authors: MarioS271
 
+pub(crate) mod start;
 pub(crate) mod new;
 pub(crate) mod delete;
 pub(crate) mod show_key;
