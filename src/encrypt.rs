@@ -18,8 +18,8 @@ pub fn generate_key() -> Result<EncryptionKey, String> {
     Ok(key)
 }
 
-pub fn encrypt(key: &EncryptionKey, plaintext: &[u8]) -> Result<Vec<u8>, String> {
-    let cipher = Aes256Gcm::new(key.into());
+pub fn encrypt(key: EncryptionKey, plaintext: &[u8]) -> Result<Vec<u8>, String> {
+    let cipher = Aes256Gcm::new(&key.into());
 
     let mut nonce_bytes = [0u8; NONCE_BYTES];
     getrandom::fill(&mut nonce_bytes).map_err(|e| format!("Could not generate nonce: {}", e))?;
@@ -34,7 +34,7 @@ pub fn encrypt(key: &EncryptionKey, plaintext: &[u8]) -> Result<Vec<u8>, String>
     Ok(result)
 }
 
-pub fn decrypt(key: &EncryptionKey, data: &[u8]) -> Result<Vec<u8>, String> {
+pub fn decrypt(key: EncryptionKey, data: &[u8]) -> Result<Vec<u8>, String> {
     if data.len() < NONCE_BYTES + TAG_BYTES {
         return Err(format!(
             "Data too short (is {} bytes, but needs to be at minimum {} bytes)",
@@ -43,7 +43,7 @@ pub fn decrypt(key: &EncryptionKey, data: &[u8]) -> Result<Vec<u8>, String> {
         ));
     }
 
-    let cipher = Aes256Gcm::new(key.into());
+    let cipher = Aes256Gcm::new(&key.into());
 
     let (nonce_bytes, ciphertext) = data.split_at(NONCE_BYTES);
     let nonce = Nonce::try_from(nonce_bytes)

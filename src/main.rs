@@ -13,12 +13,12 @@ mod helpers;
 mod message;
 mod framing;
 
-pub const PROTOCOL_VERSION: u16 = 1;
-pub const DEFAULT_PORT: u16 = 42003;
+const PROTOCOL_VERSION: u16 = 1;
+const DEFAULT_PORT: u16 = 42003;
 const MAX_MESSAGE_SIZE: usize = 65536;
-pub const TCP_TIMEOUT: std::time::Duration = std::time::Duration::new(15, 0);
+const TCP_TIMEOUT: std::time::Duration = std::time::Duration::new(15, 0);
 
-// TODO: finish encryption
+// TODO: encrypt initial handshake
 
 fn main() {
     use crate::args::client::ClientCommand;

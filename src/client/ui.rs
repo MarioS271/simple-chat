@@ -6,6 +6,7 @@
 use crate::client::helpers::sender_name_string_to_bytes;
 use crate::client::net::receive::receive_thread;
 use crate::client::state::ClientState;
+use crate::encrypt::EncryptionKey;
 use crate::message::{Formatted, Message};
 use ratatui::crossterm;
 use ratatui::crossterm::event::{Event, KeyCode};
@@ -17,7 +18,7 @@ use std::sync::{Arc, Mutex};
 
 const MAX_MESSAGE_LEN: usize = 512;
 
-pub fn start_tui(state: Arc<Mutex<ClientState>>, stream: TcpStream) -> std::io::Result<()> {
+pub fn start_tui(state: Arc<Mutex<ClientState>>, stream: TcpStream, encryption_key: EncryptionKey) -> std::io::Result<()> {
     let _guard = TerminalGuard;
 
     crossterm::terminal::enable_raw_mode()?;
@@ -33,7 +34,7 @@ pub fn start_tui(state: Arc<Mutex<ClientState>>, stream: TcpStream) -> std::io::
     let read_stream = stream.try_clone()?;
     let state_recv = Arc::clone(&state);
 
-    std::thread::spawn(move || receive_thread(read_stream, state_recv));
+    std::thread::spawn(move || receive_thread(read_stream, state_recv, encryption_key));
 
     let sender_name_array = sender_name_string_to_bytes(&state.lock().unwrap().name);
 
@@ -65,7 +66,8 @@ pub fn start_tui(state: Arc<Mutex<ClientState>>, stream: TcpStream) -> std::io::
                             crate::client::net::send::send(
                                 &stream,
                                 sender_name_array,
-                                input
+                                input,
+                                encryption_key
                             )?;
                         }
                         KeyCode::Esc => {

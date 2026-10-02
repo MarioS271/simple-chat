@@ -10,6 +10,9 @@ use crate::client::ui::start_tui;
 use std::io::{Read, Write};
 use std::net::TcpStream;
 use std::sync::{Arc, Mutex};
+use base64::Engine;
+use base64::engine::general_purpose::STANDARD;
+use crate::encrypt::EncryptionKey;
 
 pub fn handler(name: String) -> Result<(), String> {
     let mut config = crate::config::client::load()?;
@@ -19,6 +22,11 @@ pub fn handler(name: String) -> Result<(), String> {
         .ok_or_else(|| format!("Server named '{}' doesn't exist", name))?;
 
     let client_state = ClientState::new(username, server.address.clone());
+
+    let encryption_key = STANDARD.decode(server.key.trim())
+        .map_err(|e| format!("Could not decode encryption key: {}", e))?;
+    let encryption_key: EncryptionKey = encryption_key.try_into()
+        .map_err(|_| "Could not convert Vec<u8> to EncryptionKey".to_string())?;
 
     drop(config);
 
@@ -46,6 +54,7 @@ pub fn handler(name: String) -> Result<(), String> {
 
     start_tui(
         Arc::new(Mutex::new(client_state)),
-        stream
+        stream,
+        encryption_key
     ).map_err(|e| format!("{}", e))
 }

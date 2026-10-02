@@ -3,7 +3,9 @@
 //!
 //! Authors: MarioS271
 
+use crate::client::helpers::sender_name_bytes_to_string;
 use crate::client::state::EMPTY_SENDER_NAME_ARRAY;
+use crate::encrypt::{decrypt, EncryptionKey, encrypt};
 use crate::message::Message;
 use crate::{MAX_MESSAGE_SIZE, TCP_TIMEOUT, framing};
 use std::net::SocketAddr;
@@ -14,12 +16,15 @@ use tokio::sync::broadcast::error::RecvError;
 use tokio::time::timeout;
 use tokio_stream::StreamExt;
 use tokio_util::codec::{FramedRead, LengthDelimitedCodec};
-use crate::client::helpers::sender_name_bytes_to_string;
+
+// FIXME: server closes all sockets after 30s inactivity
+// TODO: reimplement connect/disconnect msgs
 
 pub async fn handle_client(
     mut stream: TcpStream,
     broadcast_sender: Sender<Message>,
-    socket_addr: SocketAddr
+    socket_addr: SocketAddr,
+    encryption_key: EncryptionKey
 ) -> std::io::Result<()> {
     stream.write_all(&crate::PROTOCOL_VERSION.to_be_bytes()).await?;
 
@@ -50,15 +55,25 @@ pub async fn handle_client(
         tokio::select! {
             socket_received_bytes = framed_reader.next() => {
                 match socket_received_bytes {
-                    Some(Ok(bytes)) => {
+                    Some(Ok(cipher)) => {
                         println!(
                             "Received {} bytes from {} ({})",
-                            bytes.len(),
+                            cipher.len(),
                             String::from_utf8_lossy(&client_name),
                             socket_addr
                         );
 
+                        let bytes = match decrypt(encryption_key, &cipher) {
+                            Ok(bytes) => bytes,
+                            Err(err) => {
+                                return Err(std::io::Error::new(
+                                    std::io::ErrorKind::Other,
+                                    err
+                                ));
+                            }
+                        };
                         let message = Message::deserialize(&bytes)?;
+
                         match message {
                             Message::Chat(mut chat_msg) => {
                                 if chat_msg.sender_name != client_name {
@@ -96,11 +111,21 @@ pub async fn handle_client(
             broadcast_received_bytes = broadcast_receiver.recv() => {
                 match broadcast_received_bytes {
                     Ok(message) => {
-                        let message_bytes = message.serialize();
-                        let mut message_framed = Vec::<u8>::new();
-                        framing::write_message(&mut message_framed, message_bytes.as_slice())?;
+                        let bytes = message.serialize();
+                        let cipher = match encrypt(encryption_key, bytes.as_slice()) {
+                            Ok(cipher) => cipher,
+                            Err(err) => {
+                                return Err(std::io::Error::new(
+                                    std::io::ErrorKind::Other,
+                                    err
+                                ));
+                            }
+                        };
 
-                        match timeout(TCP_TIMEOUT, write_stream.write_all(message_framed.as_slice())).await {
+                        let mut framed = Vec::<u8>::new();
+                        framing::write_message(&mut framed, cipher.as_slice())?;
+
+                        match timeout(TCP_TIMEOUT, write_stream.write_all(framed.as_slice())).await {
                             Ok(Ok(())) => {}
                             Ok(Err(e)) => return Err(e),
                             Err(_) => {
