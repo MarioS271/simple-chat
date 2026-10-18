@@ -16,10 +16,9 @@ type ProtocolVersion = u16;
 
 const PROTOCOL_VERSION: ProtocolVersion = 1;
 const DEFAULT_PORT: u16 = 42003;
-const MAX_MESSAGE_SIZE: usize = 65536;
-const TCP_TIMEOUT: std::time::Duration = std::time::Duration::new(15, 0);
-
-// TODO: encrypt initial handshake
+const MAX_MESSAGE_SIZE: usize = 4096;    // should stay less than or equal to u16::MAX
+const TCP_TIMEOUT: std::time::Duration = std::time::Duration::new(30, 0);
+const HEARTBEAT_INTERVAL: std::time::Duration = std::time::Duration::new(TCP_TIMEOUT.as_secs() / 3, 0);
 
 fn main() {
     use crate::args::client::ClientCommand;

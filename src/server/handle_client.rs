@@ -8,7 +8,7 @@ use crate::encrypt::{EncryptionKey, decrypt};
 use crate::packets::message::system_message::SystemMessage;
 use crate::packets::packet::Packet;
 use crate::server::net::send::send;
-use crate::{HEARTBEAT_INTERVAL, MAX_MESSAGE_SIZE, PROTOCOL_VERSION};
+use crate::{HEARTBEAT_INTERVAL, MAX_MESSAGE_SIZE, PROTOCOL_VERSION, TCP_TIMEOUT};
 use std::net::SocketAddr;
 use tokio::net::TcpStream;
 use tokio::net::tcp::{ReadHalf, WriteHalf};
@@ -139,11 +139,18 @@ async fn client_loop(
 
     let mut broadcast_receiver = broadcast_sender.subscribe();
 
+    let mut heartbeat = tokio::time::interval(HEARTBEAT_INTERVAL);
+    heartbeat.tick().await;
+
+    let mut heartbeat_deadline = tokio::time::Instant::now() + TCP_TIMEOUT;
+
     loop {
         tokio::select! {
             socket_received_bytes = framed_reader.next() => {
                 match socket_received_bytes {
                     Some(Ok(cipher)) => {
+                        heartbeat_deadline = tokio::time::Instant::now() + TCP_TIMEOUT;
+
                         println!(
                             "Received {} bytes from {} ({})",
                             cipher.len(),
@@ -164,13 +171,18 @@ async fn client_loop(
                         let packet = Packet::deserialize(&bytes)?;
 
                         match packet {
-                            Packet::Heartbeat => {}
+                            Packet::Heartbeat => {
+                                println!("-> Packet::Heartbeat");
+                            }
                             Packet::ChatMessage(mut chat_msg) => {
                                 let client_name_bytes = sender_name_string_to_bytes(client_name);
                                 if chat_msg.sender_name != sender_name_string_to_bytes(client_name) {
                                     eprintln!("Warning: client sent a message with a different name, overwriting with initially provided client name");
                                     chat_msg.sender_name = client_name_bytes;
                                 }
+
+                                println!("-> Packet::ChatMessage (\"{}\")", String::from_utf8_lossy(chat_msg.content.as_slice()));
+
                                 if let Err(e) = broadcast_sender.send(Packet::ChatMessage(chat_msg)) {
                                     return Err(std::io::Error::new(
                                         std::io::ErrorKind::InvalidData,
@@ -213,6 +225,17 @@ async fn client_loop(
                         return Ok(());
                     }
                 }
+            }
+
+            _ = heartbeat.tick() => {
+                send(Packet::Heartbeat, encryption_key, write_stream).await?;
+            }
+
+            _ = tokio::time::sleep_until(heartbeat_deadline) => {
+                return Err(std::io::Error::new(
+                    std::io::ErrorKind::TimedOut,
+                    format!("Client sent no packets or heartbeats in the last {}s", TCP_TIMEOUT.as_secs())
+                ));
             }
         }
     }

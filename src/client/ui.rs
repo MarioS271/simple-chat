@@ -3,8 +3,10 @@
 //!
 //! Authors: MarioS271
 
+use crate::HEARTBEAT_INTERVAL;
 use crate::client::helpers::sender_name_string_to_bytes;
 use crate::client::net::receive::receive_thread;
+use crate::client::net::send::{send_message, send_packet};
 use crate::client::state::ClientState;
 use crate::encrypt::EncryptionKey;
 use crate::packets::message::formatted::Formatted;
@@ -16,7 +18,6 @@ use ratatui::text::Line;
 use ratatui::widgets::Paragraph;
 use std::net::TcpStream;
 use std::sync::{Arc, Mutex};
-use crate::client::net::send::send_message;
 
 const MAX_MESSAGE_LEN: usize = 512;
 
@@ -33,10 +34,17 @@ pub fn start_tui(state: Arc<Mutex<ClientState>>, stream: TcpStream, encryption_k
         ratatui::backend::CrosstermBackend::new(std::io::stdout())
     )?;
 
-    let read_stream = stream.try_clone()?;
     let state_recv = Arc::clone(&state);
+    let read_stream = stream.try_clone()?;
+    let heartbeat_stream = stream.try_clone()?;
 
     std::thread::spawn(move || receive_thread(read_stream, state_recv, encryption_key));
+    std::thread::spawn(move || loop {
+        std::thread::sleep(HEARTBEAT_INTERVAL);
+        if send_packet(&heartbeat_stream, Packet::Heartbeat, encryption_key).is_err() {
+            break;
+        }
+    });
 
     let sender_name_array = sender_name_string_to_bytes(&state.lock().unwrap().name);
 
