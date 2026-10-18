@@ -137,7 +137,8 @@ pub fn render_tui(frame: &mut ratatui::Frame, state: &ClientState) {
 
     frame.render_widget(
         Paragraph::new(visible_lines)
-            .block(ratatui::widgets::Block::bordered().title("Messages")),
+            .block(ratatui::widgets::Block::bordered().title("Messages"))
+            .wrap(ratatui::widgets::Wrap { trim: false }),
         areas[1]
     );
 
