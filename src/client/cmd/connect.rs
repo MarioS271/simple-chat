@@ -3,16 +3,19 @@
 //!
 //! Authors: MarioS271
 
-use crate::TCP_TIMEOUT;
-use crate::client::helpers::sender_name_string_to_bytes;
+use crate::client::net::receive::cipher_to_packet;
+use crate::client::net::send::send_packet;
 use crate::client::state::ClientState;
 use crate::client::ui::start_tui;
-use std::io::{Read, Write};
-use std::net::TcpStream;
-use std::sync::{Arc, Mutex};
+use crate::encrypt::EncryptionKey;
+use crate::packets::framing;
+use crate::packets::handshake::Handshake;
+use crate::packets::packet::Packet;
+use crate::{PROTOCOL_VERSION, TCP_TIMEOUT};
 use base64::Engine;
 use base64::engine::general_purpose::STANDARD;
-use crate::encrypt::EncryptionKey;
+use std::net::TcpStream;
+use std::sync::{Arc, Mutex};
 
 pub fn handler(name: String) -> Result<(), String> {
     let mut config = crate::config::client::load()?;
@@ -39,18 +42,42 @@ pub fn handler(name: String) -> Result<(), String> {
 
     println!("Successfully connected to {}", client_state.remote);
 
-    let mut server_version = [0u8; 2];
-    stream.read_exact(&mut server_version)
-        .map_err(|e| format!("Failed to receive server's protocol version: {}", e))?;
-
-    if u16::from_be_bytes(server_version) != crate::PROTOCOL_VERSION {
-        return Err("This client is incompatible with the server's protocol version".to_string());
+    match framing::read_message(&mut stream) {
+        Ok(cipher) => {
+            match cipher_to_packet(cipher, encryption_key) {
+                Ok(Packet::Heartbeat) => {},
+                Ok(_) => {
+                    eprintln!("Received non-heartbeat packet as first packet from server");
+                    std::process::exit(1);
+                },
+                Err(err) => {
+                    eprintln!("Deserialize Error: {}", err);
+                    std::process::exit(1);
+                }
+            }
+        }
+        Err(err) if err.kind() == std::io::ErrorKind::UnexpectedEof => {
+            eprintln!("Disconnected");
+            std::process::exit(1);
+        }
+        Err(err) if err.kind() == std::io::ErrorKind::WouldBlock
+            || err.kind() == std::io::ErrorKind::TimedOut => {
+            eprintln!("Receive Timed Out: {}", err);
+            std::process::exit(1);
+        }
+        Err(err) => {
+            eprintln!("Receive Error: {}", err);
+            std::process::exit(1);
+        }
     }
 
-    stream.write_all(&crate::PROTOCOL_VERSION.to_be_bytes())
-        .map_err(|e| format!("Failed to transmit own protocol version: {}", e))?;
-    stream.write_all(&sender_name_string_to_bytes(&client_state.name))
-        .map_err(|e| format!("Failed to transmit username: {}", e))?;
+    let handshake = Handshake::new(
+        PROTOCOL_VERSION,
+        client_state.name.clone()
+    );
+    if let Err(e) = send_packet(&stream, Packet::Handshake(handshake), encryption_key) {
+        return Err(e.to_string());
+    };
 
     start_tui(
         Arc::new(Mutex::new(client_state)),

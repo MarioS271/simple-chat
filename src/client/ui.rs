@@ -7,7 +7,8 @@ use crate::client::helpers::sender_name_string_to_bytes;
 use crate::client::net::receive::receive_thread;
 use crate::client::state::ClientState;
 use crate::encrypt::EncryptionKey;
-use crate::message::{Formatted, Message};
+use crate::packets::message::formatted::Formatted;
+use crate::packets::packet::Packet;
 use ratatui::crossterm;
 use ratatui::crossterm::event::{Event, KeyCode};
 use ratatui::layout::Constraint;
@@ -15,6 +16,7 @@ use ratatui::text::Line;
 use ratatui::widgets::Paragraph;
 use std::net::TcpStream;
 use std::sync::{Arc, Mutex};
+use crate::client::net::send::send_message;
 
 const MAX_MESSAGE_LEN: usize = 512;
 
@@ -63,7 +65,7 @@ pub fn start_tui(state: Arc<Mutex<ClientState>>, stream: TcpStream, encryption_k
                                 state.input.clear();
                                 msg
                             };
-                            crate::client::net::send::send(
+                            send_message(
                                 &stream,
                                 sender_name_array,
                                 input,
@@ -92,7 +94,7 @@ pub fn render_tui(frame: &mut ratatui::Frame, state: &ClientState) {
 
     let msg_lines: Vec<Line> = state.messages.iter().map(|msg| {
         match msg {
-            Message::Chat(inner) => Line::from(
+            Packet::ChatMessage(inner) => Line::from(
                 format!(
                     "[{}] {}: {}",
                     inner.formatted_timestamp(),
@@ -100,13 +102,18 @@ pub fn render_tui(frame: &mut ratatui::Frame, state: &ClientState) {
                     inner.formatted_content()
                 )
             ),
-            Message::System(inner) => Line::from(
+            Packet::SystemMessage(inner) => Line::from(
                 format!(
                     "[{}] {}",
                     inner.formatted_timestamp(),
                     inner.formatted_content()
                 )
             ),
+            _ => {
+                end_raw_mode();
+                eprintln!("Attempted to render non-message packet as a message in the UI");
+                std::process::exit(1);
+            }
         }
     }).collect();
 

@@ -3,7 +3,7 @@
 //!
 //! Authors: MarioS271
 
-use crate::message::Message;
+use crate::packets::packet::Packet;
 
 pub const MAX_NAME_LEN: usize = 32;
 
@@ -13,7 +13,7 @@ pub const EMPTY_SENDER_NAME_ARRAY: SenderNameArray = [0u8; MAX_NAME_LEN];
 pub struct ClientState {
     pub name: String,
     pub remote: String,
-    pub messages: Vec<Message>,
+    pub messages: Vec<Packet>,
     pub input: String
 }
 

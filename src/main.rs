@@ -3,17 +3,18 @@
 //!
 //! Authors: MarioS271
 
+mod args;
 mod client;
 mod config;
+mod packets;
 mod server;
 
-mod args;
 mod encrypt;
 mod helpers;
-mod message;
-mod framing;
 
-const PROTOCOL_VERSION: u16 = 1;
+type ProtocolVersion = u16;
+
+const PROTOCOL_VERSION: ProtocolVersion = 1;
 const DEFAULT_PORT: u16 = 42003;
 const MAX_MESSAGE_SIZE: usize = 65536;
 const TCP_TIMEOUT: std::time::Duration = std::time::Duration::new(15, 0);

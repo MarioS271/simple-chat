@@ -4,7 +4,7 @@
 //! Authors: MarioS271
 
 use crate::encrypt::EncryptionKey;
-use crate::message::Message;
+use crate::packets::packet::Packet;
 use crate::server::handle_client::handle_client;
 use base64::Engine;
 use base64::engine::general_purpose::STANDARD;
@@ -28,7 +28,7 @@ pub async fn handler(name: String) -> Result<(), String> {
         .await
         .map_err(|e| format!("Could not create TcpListener: {}", e))?;
 
-    let (broadcast_sender, _) = broadcast::channel::<Message>(256);
+    let (broadcast_sender, _) = broadcast::channel::<Packet>(256);
 
     loop {
         let (tcp_stream, socket_addr) = listener.accept()
