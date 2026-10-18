@@ -5,6 +5,7 @@
 
 use crate::client::helpers::sender_name_string_to_bytes;
 use crate::encrypt::{EncryptionKey, decrypt};
+use crate::packets::message::system_message::SystemMessage;
 use crate::packets::packet::Packet;
 use crate::server::net::send::send;
 use crate::{MAX_MESSAGE_SIZE, PROTOCOL_VERSION};
@@ -14,8 +15,6 @@ use tokio::sync::broadcast::Sender;
 use tokio::sync::broadcast::error::RecvError;
 use tokio_stream::StreamExt;
 use tokio_util::codec::{FramedRead, LengthDelimitedCodec};
-// FIXME: server closes all sockets after 30s inactivity
-// TODO: reimplement connect/disconnect msgs
 
 pub async fn handle_client(
     mut stream: TcpStream,
@@ -87,7 +86,11 @@ pub async fn handle_client(
         }
     };
 
-    println!("{} ({}) connected", client_name, socket_addr);
+    let text = format!("{} ({}) connected", client_name, socket_addr);
+    println!("{}", text);
+
+    let message = SystemMessage::new(text);
+    let _ = broadcast_sender.send(Packet::SystemMessage(message));
 
     let mut broadcast_receiver = broadcast_sender.subscribe();
 
@@ -145,7 +148,12 @@ pub async fn handle_client(
                         ));
                     }
                     None => {
-                        println!("{} ({}) disconnected", client_name, socket_addr);
+                        let text = format!("{} ({}) disconnected", client_name, socket_addr);
+                        println!("{}", text);
+
+                        let message = SystemMessage::new(text);
+                        let _ = broadcast_sender.send(Packet::SystemMessage(message));
+
                         return Ok(());
                     }
                 }
