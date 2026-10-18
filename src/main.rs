@@ -52,7 +52,7 @@ fn main() {
             },
 
             Command::Client(cmd) => match cmd {
-                ClientCommand::Connect { name } => client::cmd::connect::handler(name),
+                ClientCommand::Connect { target_server_name, user_name } => client::cmd::connect::handler(target_server_name, user_name),
                 ClientCommand::Add { name, address } => client::cmd::add::handler(name, address),
                 ClientCommand::Remove { name } => client::cmd::remove::handler(name),
                 ClientCommand::Help => client::cmd::help::handler(),

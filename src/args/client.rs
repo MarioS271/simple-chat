@@ -4,7 +4,7 @@
 //! Authors: MarioS271
 
 pub enum ClientCommand {
-    Connect { name: String },
+    Connect { target_server_name: String, user_name: Option<String> },
     Add { name: String, address: String },
     Remove { name: String },
     List,
@@ -12,8 +12,9 @@ pub enum ClientCommand {
 }
 
 pub fn parse_client(mut args: impl Iterator<Item = String>) -> Result<ClientCommand, String> {
-    let mut name: String = String::new();
+    let mut target_server_name: String = String::new();
     let mut address: String = String::new();
+    let mut user_name: String = String::new();
 
     let mut mode = ClientMode::Default;
 
@@ -38,16 +39,19 @@ pub fn parse_client(mut args: impl Iterator<Item = String>) -> Result<ClientComm
             "--address" => {
                 address = args.next().ok_or("--address requires a value".to_string())?;
             }
+            "--name" => {
+                user_name = args.next().ok_or("--name requires a value".to_string())?;
+            }
             other if other.starts_with("--") => return Err(format!("Unknown Option: {}", other)),
-            other => name = other.to_string()
+            other => target_server_name = other.to_string()
         }
     }
 
-    if name.is_empty() && mode == ClientMode::Default {
+    if target_server_name.is_empty() && mode == ClientMode::Default {
         return Ok(ClientCommand::Help);
     }
 
-    if name.is_empty() {
+    if target_server_name.is_empty() {
         return Err("Missing 'name' argument".to_string());
     }
 
@@ -55,13 +59,17 @@ pub fn parse_client(mut args: impl Iterator<Item = String>) -> Result<ClientComm
         if address.is_empty() {
             return Err("No server address given".to_string());
         }
-        return Ok(ClientCommand::Add { name, address })
+        return Ok(ClientCommand::Add { name: target_server_name, address })
     }
     if mode == ClientMode::Remove {
-        return Ok(ClientCommand::Remove { name })
+        return Ok(ClientCommand::Remove { name: target_server_name })
     }
 
-    Ok(ClientCommand::Connect { name })
+    if user_name.is_empty() {
+        Ok(ClientCommand::Connect { target_server_name, user_name: None })
+    } else {
+        Ok(ClientCommand::Connect { target_server_name, user_name: Some(user_name) })
+    }
 }
 
 #[derive(PartialEq, Eq)]

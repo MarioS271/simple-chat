@@ -17,12 +17,15 @@ use base64::engine::general_purpose::STANDARD;
 use std::net::TcpStream;
 use std::sync::{Arc, Mutex};
 
-pub fn handler(name: String) -> Result<(), String> {
+pub fn handler(target_server_name: String, user_name: Option<String>) -> Result<(), String> {
     let mut config = crate::config::client::load()?;
 
-    let username = config.username()?.clone();
-    let server = config.servers().iter().find(|server| server.name == name)
-        .ok_or_else(|| format!("Server named '{}' doesn't exist", name))?;
+    let username = match user_name {
+        Some(name) => name,
+        None => config.username()?.clone()
+    };
+    let server = config.servers().iter().find(|server| server.name == target_server_name)
+        .ok_or_else(|| format!("Server named '{}' doesn't exist", target_server_name))?;
 
     let client_state = ClientState::new(username, server.address.clone());
 
