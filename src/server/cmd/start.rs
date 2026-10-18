@@ -8,8 +8,9 @@ use crate::packets::packet::Packet;
 use crate::server::handle_client::handle_client;
 use base64::Engine;
 use base64::engine::general_purpose::STANDARD;
+use std::sync::Arc;
 use tokio::net::TcpListener;
-use tokio::sync::broadcast;
+use tokio::sync::{Mutex, broadcast};
 
 #[tokio::main]
 pub async fn handler(name: String) -> Result<(), String> {
@@ -29,6 +30,7 @@ pub async fn handler(name: String) -> Result<(), String> {
         .map_err(|e| format!("Could not create TcpListener: {}", e))?;
 
     let (broadcast_sender, _) = broadcast::channel::<Packet>(256);
+    let names_list: Arc<Mutex<Vec<String>>> = Arc::new(Mutex::new(Vec::new()));
 
     loop {
         let (tcp_stream, socket_addr) = listener.accept()
@@ -36,10 +38,17 @@ pub async fn handler(name: String) -> Result<(), String> {
             .map_err(|e| format!("Could not accept connection: {}", e))?;
 
         let broadcast_sender = broadcast_sender.clone();
+        let names_list = names_list.clone();
+
         tokio::spawn(async move {
-            let result = handle_client(tcp_stream, broadcast_sender, socket_addr, encryption_key).await;
+            let (result, name) = handle_client(tcp_stream, broadcast_sender, socket_addr, encryption_key, &names_list).await;
+
             if let Err(e) = result {
-                eprintln!("handle_client failed: {}", e);
+                eprintln!("handle_client returned an Err(...): {}", e);
+            }
+
+            if let Some(name) = name {
+                names_list.lock().await.retain(|n| n != &name);
             }
         });
     }
