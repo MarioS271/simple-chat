@@ -11,8 +11,17 @@ env:
   CARGO_TERM_COLOR: always
 
 jobs:
-  release:
-    runs-on: ubuntu-latest
+  build:
+    strategy:
+      matrix:
+        include:
+          - os: ubuntu-latest
+            platform: linux
+            bin: simple-chat
+          - os: windows-latest
+            platform: windows
+            bin: simple-chat.exe
+    runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
 
@@ -26,20 +35,53 @@ jobs:
           RUSTFLAGS: "-C target-cpu=x86-64-v2"
 
       - name: Read protocol version
-        id: proto
+        if: matrix.platform == 'linux'
         run: |
           PROTO=$(./target/release/simple-chat --version | sed -n 's/^Protocol Version: //p')
-          echo "version=$PROTO" >> "$GITHUB_OUTPUT"
+          echo "$PROTO" > protocol-version.txt
 
-      - name: Package binary
+      - name: Strip binary
+        if: matrix.platform == 'linux'
+        run: strip target/release/simple-chat
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.platform }}
+          path: target/release/${{ matrix.bin }}
+
+      - uses: actions/upload-artifact@v4
+        if: matrix.platform == 'linux'
+        with:
+          name: protocol-version
+          path: protocol-version.txt
+
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+
+      - name: Write release notes
         run: |
-          strip target/release/simple-chat
-          cp target/release/simple-chat simple-chat-linux-x86_64
+          PROTO=$(cat artifacts/protocol-version/protocol-version.txt)
+          cat > notes.md <<EOF
+          Protocol Version: $PROTO
+
+          | File | Platform |
+          | --- | --- |
+          | \`simple-chat\` | Linux (x86_64) |
+          | \`simple-chat.exe\` | Windows (x86_64) |
+          EOF
+          sed -i 's/^          //' notes.md
 
       - name: Create release
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ github.ref_name }}
           name: Release ${{ github.ref_name }}
-          body: "Protocol Version: ${{ steps.proto.outputs.version }}"
-          files: simple-chat-linux-x86_64
+          body_path: notes.md
+          files: |
+            artifacts/linux/simple-chat
+            artifacts/windows/simple-chat.exe
