@@ -118,7 +118,7 @@ pub fn render_tui(frame: &mut ratatui::Frame, state: &ClientState) {
     }).collect();
 
     frame.render_widget(
-        Paragraph::new(format!("lan-chat | Connected to {} as {}", state.remote, state.name))
+        Paragraph::new(format!("simple-chat | Connected to {} as {}", state.remote, state.name))
             .style(ratatui::style::Style::default().add_modifier(ratatui::style::Modifier::REVERSED)),
         areas[0]
     );
