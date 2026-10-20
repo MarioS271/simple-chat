@@ -3,7 +3,7 @@
 //!
 //! Authors: MarioS271
 
-use crate::{MAX_FRAME_LEN, MAX_MESSAGE_LEN};
+use crate::MAX_FRAME_LEN;
 use std::io::{Read, Write};
 
 pub fn write_message(writer: &mut impl Write, data: &[u8]) -> std::io::Result<()> {
