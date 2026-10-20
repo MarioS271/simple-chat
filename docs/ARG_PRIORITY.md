@@ -19,13 +19,13 @@ order-independent for classes that do not stop the pass.
 
 ## Rules by argument class
 
-| Class          | Members                                                | On repeat                          | Stops the pass?          |
-|----------------|--------------------------------------------------------|------------------------------------|--------------------------|
-| Terminating    | `--help`, `--list`                                     | first wins                         | yes, returns immediately |
-| Unknown option | any other `--xxx`                                      | n/a                                | yes, returns an error    |
-| Mode           | `--add`, `--remove`, `--new`, `--delete`, `--show-key` | first wins, second is a hard error | no                       |
-| Value          | `--port N` (server), `--address S` (client)            | last wins, silently                | no                       |
-| Positional     | the server name                                        | last wins, silently                | no                       |
+| Class          | Members                                                 | On repeat                          | Stops the pass?          |
+|----------------|---------------------------------------------------------|------------------------------------|--------------------------|
+| Terminating    | `--help`, `--list`                                      | first wins                         | yes, returns immediately |
+| Unknown option | any other `--xxx`                                       | n/a                                | yes, returns an error    |
+| Mode           | `--add`, `--remove`, `--new`, `--delete`, `--show-key`  | first wins, second is a hard error | no                       |
+| Value          | `--port N` (server), `--address S`, `--name S` (client) | last wins, silently                | no                       |
+| Positional     | the server name                                         | last wins, silently                | no                       |
 
 ### Terminating flags: first wins, and they end the pass
 
@@ -60,12 +60,13 @@ rejected. The error names the mode that was already set.
 Both are unconditional assignments, so a later occurrence overwrites an earlier
 one. No warning is emitted.
 
-| Invocation                               | Result      |
-|------------------------------------------|-------------|
-| `server x --new --port 1 --port 2`       | port 2      |
-| `client x --add --address a --address b` | address `b` |
-| `server a b --show-key`                  | name `b`    |
-| `server --show-key a b`                  | name `b`    |
+| Invocation                               | Result        |
+|------------------------------------------|---------------|
+| `server x --new --port 1 --port 2`       | port 2        |
+| `client x --add --address a --address b` | address `b`   |
+| `client x --name a --name b`             | user name `b` |
+| `server a b --show-key`                  | name `b`      |
+| `server --show-key a b`                  | name `b`      |
 
 ### Mode and positional are order-independent
 
@@ -86,27 +87,33 @@ for each argument, left to right:
                                else:           RETURN error (conflict)
     --port / --address      -> take the NEXT argument as the value
                                (overwrites any previous one)
+    --name                  -> take the NEXT argument as the user name
+                               (overwrites any previous one)
     any other --xxx         -> RETURN error (unknown option)
     anything else           -> name = it (overwrites any previous name)
 
 after the loop:
     1. no name AND no mode  -> help
     2. no name (mode set)   -> error "Missing 'name' argument"
-    3. otherwise            -> dispatch on mode
+    3. Add mode, no address -> error "No server address given"
+    4. otherwise            -> dispatch on mode
                                (no mode -> Connect / Start)
+       Connect with a --name over the length limit
+                            -> error "Username is too long"
 ```
 
 Step 1 must precede step 2. It is what makes a bare `simple-chat server` print
 help instead of failing.
 
-Note that only the name is checked for emptiness. A value flag that was never
-given stays at its empty default and is not reported.
+The name is always checked for emptiness. The address is checked only in Add
+mode, and the user name is only checked (for length) when connecting. A value
+flag that was never given stays at its empty default.
 
 ## Gotchas
 
 ### Value flags swallow the next argument unconditionally
 
-`--port` and `--address` take whatever follows them without checking whether it
+`--port`, `--address` and `--name` take whatever follows them without checking whether it
 looks like a flag. A flag placed directly after one of them is consumed as its
 value and never reaches the match arm.
 
@@ -117,23 +124,29 @@ value and never reaches the match arm.
 | `server srv --port`               | Err "--port requires a value"    |
 | `client --address --help x --add` | address becomes `--help:42003`   |
 | `client x --add --address`        | Err "--address requires a value" |
+| `client x --name`                 | Err "--name requires a value"    |
+| `client --name --help x`          | user name becomes `--help`       |
 
 This is the one case where `--help` does not win.
 
-The two flags differ in how loudly they fail. `--port` validates its value as a
-`u16`, so a swallowed flag produces an error. `--address` accepts any string, so
-a swallowed flag is silently written into the config as a hostname.
+The flags differ in how loudly they fail. `--port` validates its value as a
+`u16`, so a swallowed flag produces an error. `--address` and `--name` accept
+any string, so a swallowed flag is silently used as a hostname or user name
+(`--address` writes it into the config).
 
 ### Value flags are silently ignored outside their own mode
 
-Only `New` carries a port and only `Add` carries an address. The other modes do
-not, so a value flag given alongside them is parsed, validated, and then
-discarded without a word.
+Only `New` carries a port, only `Add` carries an address, and only `Connect`
+carries a user name. The other modes do not, so a value flag given alongside
+them is parsed and then discarded without a word. `--port` is still validated
+as a number first; `--name` is not length-checked unless connecting.
 
-| Invocation                        | Result                       |
-|-----------------------------------|------------------------------|
-| `server x --delete --port 9999`   | deletes `x`, port ignored    |
-| `client x --remove --address foo` | removes `x`, address ignored |
+| Invocation                        | Result                           |
+|-----------------------------------|----------------------------------|
+| `server x --delete --port 9999`   | deletes `x`, port ignored        |
+| `client x --remove --address foo` | removes `x`, address ignored     |
+| `client x --add --address a --name b` | adds `x`, user name ignored  |
+| `client x --address a`            | connects to `x`, address ignored |
 
 ### A malformed port still errors even if the mode would ignore it
 
@@ -143,16 +156,21 @@ Validation happens during the pass, before the mode is known.
 |--------------------------------|-------------------------|
 | `server x --delete --port abc` | Err "Invalid Port: abc" |
 
-### A missing `--address` is not an error
+### `--add` requires a non-empty address
 
-`--add` without `--address` leaves the address empty. The handler then appends
-the default port to it, producing an address with no host.
+`--add` without `--address`, or with an empty one, is an error. The default
+port is appended by the handler only when the address has no port.
 
-| Invocation                           | Stored address  |
-|--------------------------------------|-----------------|
-| `client x --add --address 1.2.3.4:5` | `1.2.3.4:5`     |
-| `client x --add --address 1.2.3.4`   | `1.2.3.4:42003` |
-| `client x --add`                     | `:42003`        |
+| Invocation                           | Result                         |
+|--------------------------------------|--------------------------------|
+| `client x --add --address 1.2.3.4:5` | stores `1.2.3.4:5`             |
+| `client x --add --address 1.2.3.4`   | stores `1.2.3.4:42003`         |
+| `client x --add`                     | Err "No server address given"  |
+
+### An empty `--name` means "not given"
+
+`--name ""` is treated like an omitted `--name`, and the saved user name is
+used. A name longer than the limit is an error, but only when connecting.
 
 ## Full conflict table
 
@@ -171,6 +189,11 @@ the default port to it, producing an address with no host.
 | `server x --port 1 --port 2 --new`       | `2`         | new `x` on port 2                     |
 | `server --new --port 1 x --port 2`       | `2`, `x`    | new `x` on port 2                     |
 | `client x --add --address a --address b` | `b`         | add `x` at `b:42003`                  |
+| `client x --name a --name b`             | `b`         | connect to `x` as `b`                 |
+| `client x --add --address a --name b`    | `--add`     | add `x`, user name ignored            |
+| `client x --add`                         | n/a         | Err no server address                 |
+| `client x --name`                        | n/a         | Err `--name` requires a value         |
+| `server x --name a`                      | n/a         | Err unknown option (client-only flag) |
 | `server x --delete --port 9999`          | `--delete`  | delete `x`, port ignored              |
 | `client x --remove --address foo`        | `--remove`  | remove `x`, address ignored           |
 | `server x --delete --port abc`           | n/a         | Err invalid port                      |
@@ -182,6 +205,21 @@ the default port to it, producing an address with no host.
 | `client --port 1 x --add`                | n/a         | Err unknown option (server-only flag) |
 | `server`                                 | n/a         | help (no name, no mode)               |
 | `server --new`                           | n/a         | Err missing name                      |
+
+## Top level
+
+The first argument alone selects the subcommand, before any of the rules above
+apply.
+
+| Invocation                     | Result                           |
+|--------------------------------|----------------------------------|
+| `simple-chat`                  | help                             |
+| `simple-chat --help`           | help                             |
+| `simple-chat --version`        | protocol version                 |
+| `simple-chat client ...`       | client parsing                   |
+| `simple-chat server ...`       | server parsing                   |
+| `simple-chat x`                | Err unknown option or subcommand |
+| `simple-chat --version client` | version, rest never read         |
 
 ## Not supported
 
