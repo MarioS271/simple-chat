@@ -23,7 +23,7 @@ pub fn receive_thread(mut read_stream: TcpStream, state_recv: Arc<Mutex<ClientSt
                         std::process::exit(1);
                     },
                     Ok(packet @ (Packet::ChatMessage(_) | Packet::SystemMessage(_))) => {
-                        state_recv.lock().unwrap().messages.push(packet);
+                        state_recv.lock().unwrap().push_message(packet);
                     },
                     Err(err) => {
                         end_raw_mode();

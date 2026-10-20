@@ -12,12 +12,13 @@ use crate::encrypt::EncryptionKey;
 use crate::packets::message::formatted::Formatted;
 use crate::packets::packet::Packet;
 use ratatui::crossterm;
-use ratatui::crossterm::event::{Event, KeyCode, KeyEventKind};
+use ratatui::crossterm::event::{Event, KeyCode, KeyEventKind, KeyModifiers};
 use ratatui::layout::Constraint;
 use ratatui::text::Line;
 use ratatui::widgets::Paragraph;
 use std::net::TcpStream;
 use std::sync::{Arc, Mutex};
+use unicode_width::UnicodeWidthChar;
 
 pub fn start_tui(state: Arc<Mutex<ClientState>>, stream: TcpStream, encryption_key: EncryptionKey) -> std::io::Result<()> {
     let _guard = TerminalGuard;
@@ -56,6 +57,10 @@ pub fn start_tui(state: Arc<Mutex<ClientState>>, stream: TcpStream, encryption_k
             match crossterm::event::read()? {
                 Event::Key(key) if key.kind == KeyEventKind::Press => {
                     match key.code {
+                        KeyCode::Char('c') if key.modifiers.contains(KeyModifiers::CONTROL) => {
+                            end_raw_mode();
+                            std::process::exit(0);
+                        }
                         KeyCode::Char(c) => {
                             let mut state = state.lock().unwrap();
                             if state.input.len() + c.len_utf8() <= MAX_MESSAGE_LEN {
@@ -148,18 +153,18 @@ pub fn render_tui(frame: &mut ratatui::Frame, state: &ClientState) {
         areas[1]
     );
 
-    let available_width = areas[2].width.saturating_sub(2) as usize;
-    let char_count = state.input.chars().count();
-    let display_input = if char_count > available_width {
-        let start = state.input
-            .char_indices()
-            .nth(char_count - available_width)
-            .map(|(byte_index, _)| byte_index)
-            .unwrap_or(0);
-        &state.input[start..]
-    } else {
-        &state.input
-    };
+    let available_width = areas[2].width.saturating_sub(4) as usize;
+    let mut display_width = 0;
+    let mut start = state.input.len();
+    for (byte_index, character) in state.input.char_indices().rev() {
+        let character_width = character.width().unwrap_or(0);
+        if display_width + character_width > available_width {
+            break;
+        }
+        display_width += character_width;
+        start = byte_index;
+    }
+    let display_input = &state.input[start..];
 
     frame.render_widget(
         Paragraph::new(format!(" {}", display_input))
@@ -167,7 +172,7 @@ pub fn render_tui(frame: &mut ratatui::Frame, state: &ClientState) {
         areas[2]
     );
 
-    let cursor_x = areas[2].x + 2 + display_input.chars().count() as u16;
+    let cursor_x = areas[2].x + 2 + display_width as u16;
     let cursor_y = areas[2].y + 1;
     frame.set_cursor_position(ratatui::layout::Position { x: cursor_x, y: cursor_y });
 }
