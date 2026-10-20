@@ -3,6 +3,8 @@
 //!
 //! Authors: MarioS271
 
+use crate::MAX_NAME_LEN;
+
 pub enum ClientCommand {
     Connect { target_server_name: String, user_name: Option<String> },
     Add { name: String, address: String },
@@ -66,10 +68,13 @@ pub fn parse_client(mut args: impl Iterator<Item = String>) -> Result<ClientComm
     }
 
     if user_name.is_empty() {
-        Ok(ClientCommand::Connect { target_server_name, user_name: None })
-    } else {
-        Ok(ClientCommand::Connect { target_server_name, user_name: Some(user_name) })
+        return Ok(ClientCommand::Connect { target_server_name, user_name: None })
     }
+
+    if user_name.len() > MAX_NAME_LEN {
+        return Err(format!("Username is too long (can't be over {} chars long)", MAX_NAME_LEN));
+    }
+    Ok(ClientCommand::Connect { target_server_name, user_name: Some(user_name) })
 }
 
 #[derive(PartialEq, Eq)]

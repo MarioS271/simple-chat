@@ -3,8 +3,9 @@
 //!
 //! Authors: MarioS271
 
-use serde::{Deserialize, Serialize};
+use crate::MAX_NAME_LEN;
 use crate::helpers::ask_for_input;
+use serde::{Deserialize, Serialize};
 
 const CLIENT_CONFIG_FILE: &str = "clients.toml";
 
@@ -19,6 +20,10 @@ impl ClientConfig {
         if self.username.is_empty() {
             let input = ask_for_input("Please enter your username")
                 .map_err(|e| format!("Failed to read in username: {}", e))?;
+            if input.len() > MAX_NAME_LEN {
+                return Err(format!("Username is too long (can't be over {} chars long)", MAX_NAME_LEN));
+            }
+
             self.username = input;
             save(&self)?;
         }
