@@ -10,11 +10,16 @@ pub trait Formatted {
     fn __content(&self) -> &[u8];
 
     fn formatted_timestamp(&self) -> String {
-        chrono::DateTime::from_timestamp(self.__timestamp() as i64, 0)
-            .unwrap()
-            .with_timezone(&chrono::Local)
-            .format("%H:%M:%S")
-            .to_string()
+        let datetime = chrono::DateTime::from_timestamp(self.__timestamp() as i64, 0);
+
+        if let Some(datetime) = datetime {
+            datetime
+                .with_timezone(&chrono::Local)
+                .format("%H:%M:%S")
+                .to_string()
+        } else {
+            "??:??:??".to_string()
+        }
     }
 
     fn formatted_content(&self) -> Cow<'_, str> {
