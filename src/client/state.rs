@@ -3,9 +3,8 @@
 //!
 //! Authors: MarioS271
 
+use crate::MAX_NAME_LEN;
 use crate::packets::packet::Packet;
-
-pub const MAX_NAME_LEN: usize = 32;
 
 pub type SenderNameArray = [u8; MAX_NAME_LEN];
 pub const EMPTY_SENDER_NAME_ARRAY: SenderNameArray = [0u8; MAX_NAME_LEN];

@@ -4,7 +4,8 @@
 //! Authors: MarioS271
 
 use super::formatted::Formatted;
-use crate::client::state::{MAX_NAME_LEN, SenderNameArray};
+use crate::MAX_NAME_LEN;
+use crate::client::state::SenderNameArray;
 use crate::helpers::get_timestamp;
 
 #[derive(Clone)]

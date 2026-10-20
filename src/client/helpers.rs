@@ -3,7 +3,8 @@
 //!
 //! Authors: MarioS271
 
-use crate::client::state::{EMPTY_SENDER_NAME_ARRAY, MAX_NAME_LEN, SenderNameArray};
+use crate::MAX_NAME_LEN;
+use crate::client::state::{EMPTY_SENDER_NAME_ARRAY, SenderNameArray};
 
 pub fn sender_name_string_to_bytes(sender_name: &str) -> SenderNameArray {
     let mut name_bytes = EMPTY_SENDER_NAME_ARRAY;

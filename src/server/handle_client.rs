@@ -8,7 +8,7 @@ use crate::encrypt::{EncryptionKey, decrypt};
 use crate::packets::message::system_message::SystemMessage;
 use crate::packets::packet::Packet;
 use crate::server::net::send::send;
-use crate::{HEARTBEAT_INTERVAL, MAX_MESSAGE_SIZE, PROTOCOL_VERSION, TCP_TIMEOUT};
+use crate::{HEARTBEAT_INTERVAL, MAX_MESSAGE_SIZE, MAX_NAME_LEN, PROTOCOL_VERSION, TCP_TIMEOUT};
 use std::net::SocketAddr;
 use tokio::net::TcpStream;
 use tokio::net::tcp::{ReadHalf, WriteHalf};
@@ -71,7 +71,16 @@ pub async fn handle_client(
                         )), None);
                     }
 
-                    handshake.client_name
+                    let name = handshake.client_name.trim();
+
+                    if name.is_empty() || name.len() > MAX_NAME_LEN || name.chars().any(char::is_control) {
+                        return (Err(std::io::Error::new(
+                            std::io::ErrorKind::InvalidData,
+                            format!("Invalid client name (must be 1-{} bytes, no control characters)", MAX_NAME_LEN)
+                        )), None);
+                    }
+
+                    name.to_string()
                 }
                 _ => {
                     return (Err(std::io::Error::new(
