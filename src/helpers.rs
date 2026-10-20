@@ -45,5 +45,9 @@ pub fn ask_for_confirmation(prompt: &str, default_is_yes: bool) -> std::io::Resu
     let mut result = String::new();
     std::io::stdin().read_line(&mut result)?;
 
-    Ok(matches!(result.trim(), "y" | "Y"))
+    Ok(match result.trim().to_lowercase().as_str() {
+        "" => default_is_yes,
+        "y" | "yes" => true,
+        _ => false
+    })
 }
