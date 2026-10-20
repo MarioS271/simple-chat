@@ -12,7 +12,7 @@ use crate::encrypt::EncryptionKey;
 use crate::packets::message::formatted::Formatted;
 use crate::packets::packet::Packet;
 use ratatui::crossterm;
-use ratatui::crossterm::event::{Event, KeyCode};
+use ratatui::crossterm::event::{Event, KeyCode, KeyEventKind};
 use ratatui::layout::Constraint;
 use ratatui::text::Line;
 use ratatui::widgets::Paragraph;
@@ -55,7 +55,7 @@ pub fn start_tui(state: Arc<Mutex<ClientState>>, stream: TcpStream, encryption_k
 
         if crossterm::event::poll(std::time::Duration::from_millis(50))? {
             match crossterm::event::read()? {
-                Event::Key(key) => {
+                Event::Key(key) if key.kind == KeyEventKind::Press => {
                     match key.code {
                         KeyCode::Char(c) => {
                             let mut state = state.lock().unwrap();
