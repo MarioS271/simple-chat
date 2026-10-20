@@ -13,6 +13,7 @@ pub fn handler() -> Result<(), String> {
         Options:
             --add       Add a server with the given name (requires --address)
             --address   The address for the server to add (requires --add, uses port {} if the port is omitted)
+            --name      The user name to connect with (overrides the saved user name for this connection)
             --remove    Remove a saved server with the given name
             --list      Output a list of saved servers
             --help      Show this message
