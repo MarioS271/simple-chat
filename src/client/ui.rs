@@ -131,14 +131,23 @@ pub fn render_tui(frame: &mut ratatui::Frame, state: &ClientState) {
         areas[0]
     );
 
-    let visible_height = areas[1].height.saturating_sub(2) as usize;
-    let start = msg_lines.len().saturating_sub(visible_height);
+    let messages_block = ratatui::widgets::Block::bordered().title("Messages");
+    let inner_area = messages_block.inner(areas[1]);
+
+    // every message takes at least one row, so older ones can never be visible
+    let start = msg_lines.len().saturating_sub(inner_area.height as usize);
     let visible_lines = msg_lines[start..].to_vec();
 
+    // wrapped lines take more than one row, so scroll down until the newest message is at the bottom
+    let messages = Paragraph::new(visible_lines)
+        .wrap(ratatui::widgets::Wrap { trim: false });
+    let wrapped_height = messages.line_count(inner_area.width);
+    let scroll = wrapped_height.saturating_sub(inner_area.height as usize);
+
     frame.render_widget(
-        Paragraph::new(visible_lines)
-            .block(ratatui::widgets::Block::bordered().title("Messages"))
-            .wrap(ratatui::widgets::Wrap { trim: false }),
+        messages
+            .scroll((scroll.min(u16::MAX as usize) as u16, 0))
+            .block(messages_block),
         areas[1]
     );
 
