@@ -48,7 +48,14 @@ pub fn start_tui(state: Arc<Mutex<ClientState>>, stream: TcpStream, encryption_k
 
     let sender_name_array = sender_name_string_to_bytes(&state.lock().unwrap().name);
 
+    let mut needs_full_redraw = false;
+
     loop {
+        if needs_full_redraw {
+            terminal.clear()?;
+            needs_full_redraw = false;
+        }
+
         terminal.draw(|frame| {
             render_tui(frame, &state.lock().unwrap());
         })?;
@@ -68,11 +75,14 @@ pub fn start_tui(state: Arc<Mutex<ClientState>>, stream: TcpStream, encryption_k
                             }
                         }
                         KeyCode::Backspace => {
-                            state.lock().unwrap().input.pop();
+                            if let Some(removed) = state.lock().unwrap().input.pop() {
+                                needs_full_redraw = is_wide(removed);
+                            }
                         }
                         KeyCode::Enter => {
                             let input = {
                                 let mut state = state.lock().unwrap();
+                                needs_full_redraw = state.input.chars().any(is_wide);
                                 let msg = state.input.trim().to_string();
                                 state.input.clear();
                                 msg
@@ -95,6 +105,10 @@ pub fn start_tui(state: Arc<Mutex<ClientState>>, stream: TcpStream, encryption_k
             }
         }
     }
+}
+
+fn is_wide(character: char) -> bool {
+    character.width().unwrap_or(0) > 1
 }
 
 pub fn render_tui(frame: &mut ratatui::Frame, state: &ClientState) {
