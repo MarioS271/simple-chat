@@ -8,7 +8,7 @@ use crate::encrypt::{EncryptionKey, decrypt};
 use crate::packets::message::system_message::SystemMessage;
 use crate::packets::packet::Packet;
 use crate::server::net::send::send;
-use crate::{HEARTBEAT_INTERVAL, MAX_MESSAGE_SIZE, MAX_NAME_LEN, PROTOCOL_VERSION, TCP_TIMEOUT};
+use crate::{HEARTBEAT_INTERVAL, INITIAL_CONNECT_TIMEOUT, MAX_MESSAGE_SIZE, MAX_NAME_LEN, PROTOCOL_VERSION, TCP_TIMEOUT};
 use std::net::SocketAddr;
 use tokio::net::TcpStream;
 use tokio::net::tcp::{ReadHalf, WriteHalf};
@@ -36,7 +36,17 @@ pub async fn handle_client(
         _ => {}
     };
 
-    let client_name = match framed_reader.next().await {
+    let first_frame = match tokio::time::timeout(INITIAL_CONNECT_TIMEOUT, framed_reader.next()).await {
+        Ok(frame) => frame,
+        Err(_) => {
+            return (Err(std::io::Error::new(
+                std::io::ErrorKind::TimedOut,
+                format!("Unknown client sent no handshake within {}s", INITIAL_CONNECT_TIMEOUT.as_secs())
+            )), None);
+        }
+    };
+
+    let client_name = match first_frame {
         Some(Ok(cipher)) => {
             println!(
                 "Received {} bytes from an unknown client (this is probably a handshake)",

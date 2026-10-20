@@ -22,6 +22,7 @@ const MAX_NAME_LEN: usize = 32;
 
 const TCP_TIMEOUT: std::time::Duration = std::time::Duration::new(30, 0);
 const HEARTBEAT_INTERVAL: std::time::Duration = std::time::Duration::new(TCP_TIMEOUT.as_secs() / 3, 0);
+const INITIAL_CONNECT_TIMEOUT: std::time::Duration = std::time::Duration::new(5, 0);
 
 fn main() {
     use crate::args::client::ClientCommand;
