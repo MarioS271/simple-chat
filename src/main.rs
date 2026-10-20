@@ -17,7 +17,7 @@ type ProtocolVersion = u16;
 const PROTOCOL_VERSION: ProtocolVersion = 1;
 const DEFAULT_PORT: u16 = 42003;
 
-const MAX_FRAME_LEN: usize = 4096;
+const MAX_FRAME_LEN: usize = 2048;
 const MAX_MESSAGE_LEN: usize = 1024;
 const MAX_NAME_LEN: usize = 32;
 

@@ -50,6 +50,8 @@ simple-chat client <name> --remove                       # remove a saved server
 
 Run `simple-chat --help`, `simple-chat server --help` or `simple-chat client --help` for the full option lists.
 How conflicting or repeated arguments are resolved is documented in [docs/ARG_PRIORITY.md](docs/ARG_PRIORITY.md).
+The wire format is documented in [docs/PACKETS.md](docs/PACKETS.md) and how data moves through a chat network in
+[docs/DATA_FLOW.md](docs/DATA_FLOW.md).
 
 ### 1.5. Configuration
 

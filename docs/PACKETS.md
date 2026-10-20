@@ -147,13 +147,14 @@ The length counts only the encrypted packet, not the prefix itself.
 
 | Side               | Implementation                                   | Frame limit                    |
 |--------------------|--------------------------------------------------|--------------------------------|
-| Client read/write  | [framing.rs](../src/packets/framing.rs)          | 4096 bytes                     |
-| Server write       | [framing.rs](../src/packets/framing.rs)          | 4096 bytes                     |
-| Server read        | tokio `LengthDelimitedCodec` (4 byte big endian) | 1024 bytes (`MAX_MESSAGE_LEN`) |
+| Client read/write  | [framing.rs](../src/packets/framing.rs)          | 2048 bytes                     |
+| Server write       | [framing.rs](../src/packets/framing.rs)          | 2048 bytes                     |
+| Server read        | tokio `LengthDelimitedCodec` (4 byte big endian) | 2048 bytes                     |
 
 A frame over the limit is rejected before any body bytes are read or written.
 
-The two implementations produce the same wire format. Only the limits differ, see the gotcha below.
+Both implementations produce the same wire format and use the same limit. The largest legitimate frame, a 1024 byte
+message, is 1128 bytes.
 
 ## 5. Complete example
 
