@@ -21,12 +21,3 @@ pub fn sender_name_string_to_bytes(sender_name: &str) -> SenderNameArray {
 
     name_bytes
 }
-
-pub fn sender_name_bytes_to_string(sender_name: &SenderNameArray) -> String {
-    let trimmed = sender_name.iter()
-        .position(|&byte| byte == 0)
-        .map(|len| &sender_name[..len])
-        .unwrap_or(sender_name);
-
-    String::from_utf8_lossy(trimmed).into_owned()
-}
