@@ -3,14 +3,14 @@
 //!
 //! Authors: MarioS271
 
-use crate::MAX_MESSAGE_LEN;
+use crate::{MAX_FRAME_LEN, MAX_MESSAGE_LEN};
 use std::io::{Read, Write};
 
 pub fn write_message(writer: &mut impl Write, data: &[u8]) -> std::io::Result<()> {
-    if data.len() > MAX_MESSAGE_LEN {
+    if data.len() > MAX_FRAME_LEN {
         return Err(std::io::Error::new(
             std::io::ErrorKind::InvalidInput,
-            "Message too large"
+            "Frame too large"
         ));
     }
 
@@ -29,10 +29,10 @@ pub fn read_message(reader: &mut impl Read) -> std::io::Result<Vec<u8>> {
 
     let len = u32::from_be_bytes(len_buf) as usize;
 
-    if len > MAX_MESSAGE_LEN {
+    if len > MAX_FRAME_LEN {
         return Err(std::io::Error::new(
             std::io::ErrorKind::InvalidData,
-            "Message too large"
+            "Frame too large"
         ));
     }
 

@@ -58,7 +58,7 @@ pub fn start_tui(state: Arc<Mutex<ClientState>>, stream: TcpStream, encryption_k
                     match key.code {
                         KeyCode::Char(c) => {
                             let mut state = state.lock().unwrap();
-                            if state.input.len() < MAX_MESSAGE_LEN {
+                            if state.input.len() + c.len_utf8() <= MAX_MESSAGE_LEN {
                                 state.input.push(c);
                             }
                         }
