@@ -6,7 +6,6 @@
 use super::formatted::Formatted;
 use crate::MAX_NAME_LEN;
 use crate::client::state::SenderNameArray;
-use crate::helpers::get_timestamp;
 
 #[derive(Clone)]
 pub struct ChatMessage {
@@ -20,7 +19,7 @@ impl ChatMessage {
 
     pub fn new(sender_name: SenderNameArray, content: String) -> Self {
         Self {
-            timestamp: get_timestamp(),
+            timestamp: 0u64,
             sender_name,
             content: content.into_bytes()
         }

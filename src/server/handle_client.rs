@@ -17,6 +17,7 @@ use tokio::sync::broadcast::Sender;
 use tokio::sync::broadcast::error::RecvError;
 use tokio_stream::StreamExt;
 use tokio_util::codec::{FramedRead, LengthDelimitedCodec};
+use crate::helpers::get_timestamp;
 
 pub async fn handle_client(
     mut stream: TcpStream,
@@ -199,6 +200,8 @@ async fn client_loop(
                                     eprintln!("Warning: client sent a message with a different name, overwriting with initially provided client name");
                                     chat_msg.sender_name = client_name_bytes;
                                 }
+
+                                chat_msg.timestamp = get_timestamp();
 
                                 let content = String::from_utf8_lossy(chat_msg.content.as_slice());
                                 if content.trim().is_empty() {
