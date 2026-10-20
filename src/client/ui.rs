@@ -36,12 +36,13 @@ pub fn start_tui(state: Arc<Mutex<ClientState>>, stream: TcpStream, encryption_k
 
     let state_recv = Arc::clone(&state);
     let read_stream = stream.try_clone()?;
-    let heartbeat_stream = stream.try_clone()?;
+    let write_stream = Arc::new(Mutex::new(stream));
+    let heartbeat_stream = Arc::clone(&write_stream);
 
     std::thread::spawn(move || receive_thread(read_stream, state_recv, encryption_key));
     std::thread::spawn(move || loop {
         std::thread::sleep(HEARTBEAT_INTERVAL);
-        if send_packet(&heartbeat_stream, Packet::Heartbeat, encryption_key).is_err() {
+        if send_packet(&heartbeat_stream.lock().unwrap(), Packet::Heartbeat, encryption_key).is_err() {
             break;
         }
     });
@@ -74,7 +75,7 @@ pub fn start_tui(state: Arc<Mutex<ClientState>>, stream: TcpStream, encryption_k
                                 msg
                             };
                             send_message(
-                                &stream,
+                                &write_stream.lock().unwrap(),
                                 sender_name_array,
                                 input,
                                 encryption_key
