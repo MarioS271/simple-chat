@@ -8,7 +8,7 @@ use crate::encrypt::{EncryptionKey, decrypt};
 use crate::packets::message::system_message::SystemMessage;
 use crate::packets::packet::Packet;
 use crate::server::net::send::send;
-use crate::{HEARTBEAT_INTERVAL, INITIAL_CONNECT_TIMEOUT, MAX_MESSAGE_SIZE, MAX_NAME_LEN, PROTOCOL_VERSION, TCP_TIMEOUT};
+use crate::{HEARTBEAT_INTERVAL, INITIAL_CONNECT_TIMEOUT, MAX_MESSAGE_LEN, MAX_NAME_LEN, PROTOCOL_VERSION, TCP_TIMEOUT};
 use std::net::SocketAddr;
 use tokio::net::TcpStream;
 use tokio::net::tcp::{ReadHalf, WriteHalf};
@@ -28,7 +28,7 @@ pub async fn handle_client(
 ) -> (std::io::Result<()>, Option<String>) {
     let (read_stream, mut write_stream) = stream.split();
     let decoder = LengthDelimitedCodec::builder()
-        .max_frame_length(MAX_MESSAGE_SIZE)
+        .max_frame_length(MAX_MESSAGE_LEN)
         .new_codec();
     let mut framed_reader = FramedRead::new(read_stream, decoder);
 

@@ -3,7 +3,7 @@
 //!
 //! Authors: MarioS271
 
-use crate::HEARTBEAT_INTERVAL;
+use crate::{HEARTBEAT_INTERVAL, MAX_MESSAGE_LEN};
 use crate::client::helpers::sender_name_string_to_bytes;
 use crate::client::net::receive::receive_thread;
 use crate::client::net::send::{send_message, send_packet};
@@ -18,8 +18,6 @@ use ratatui::text::Line;
 use ratatui::widgets::Paragraph;
 use std::net::TcpStream;
 use std::sync::{Arc, Mutex};
-
-const MAX_MESSAGE_LEN: usize = 512;
 
 pub fn start_tui(state: Arc<Mutex<ClientState>>, stream: TcpStream, encryption_key: EncryptionKey) -> std::io::Result<()> {
     let _guard = TerminalGuard;
@@ -135,11 +133,9 @@ pub fn render_tui(frame: &mut ratatui::Frame, state: &ClientState) {
     let messages_block = ratatui::widgets::Block::bordered().title("Messages");
     let inner_area = messages_block.inner(areas[1]);
 
-    // every message takes at least one row, so older ones can never be visible
     let start = msg_lines.len().saturating_sub(inner_area.height as usize);
     let visible_lines = msg_lines[start..].to_vec();
 
-    // wrapped lines take more than one row, so scroll down until the newest message is at the bottom
     let messages = Paragraph::new(visible_lines)
         .wrap(ratatui::widgets::Wrap { trim: false });
     let wrapped_height = messages.line_count(inner_area.width);

@@ -17,7 +17,7 @@ type ProtocolVersion = u16;
 const PROTOCOL_VERSION: ProtocolVersion = 1;
 const DEFAULT_PORT: u16 = 42003;
 
-const MAX_MESSAGE_SIZE: usize = 4096;    // should stay less than or equal to u16::MAX
+const MAX_MESSAGE_LEN: usize = 1024;
 const MAX_NAME_LEN: usize = 32;
 
 const TCP_TIMEOUT: std::time::Duration = std::time::Duration::new(30, 0);
