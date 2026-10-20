@@ -200,7 +200,21 @@ async fn client_loop(
                                     chat_msg.sender_name = client_name_bytes;
                                 }
 
-                                println!("-> Packet::ChatMessage (\"{}\")", String::from_utf8_lossy(chat_msg.content.as_slice()));
+                                let content = String::from_utf8_lossy(chat_msg.content.as_slice());
+                                if content.trim().is_empty() {
+                                    return Err(std::io::Error::new(
+                                        std::io::ErrorKind::InvalidData,
+                                        "Client sent an empty message"
+                                    ));
+                                }
+                                if content.chars().any(char::is_control) {
+                                    return Err(std::io::Error::new(
+                                        std::io::ErrorKind::InvalidData,
+                                        "Client sent a message containing control characters"
+                                    ));
+                                }
+
+                                println!("-> Packet::ChatMessage ({:?})", content);
 
                                 if let Err(e) = broadcast_sender.send(Packet::ChatMessage(chat_msg)) {
                                     return Err(std::io::Error::new(
