@@ -39,7 +39,8 @@ simple-chat server <name> --delete             # delete a server
 ```
 
 ### 1.4. Joining a Server
-
+> [!IMPORTANT]
+> This assumes your server is `192.168.1.10`. If you're running both the server and client on the same machine, use `localhost` or `127.0.0.1` instead.
 ```
 simple-chat client <name> --add --address 192.168.1.10   # save a server (port is optional, 42003 by default)
 simple-chat client <name>                                # connect to a saved server
